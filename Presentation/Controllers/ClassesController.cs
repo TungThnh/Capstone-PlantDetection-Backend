@@ -68,49 +68,20 @@ namespace Presentation.Controllers
             }
         }
 
-        public async Task<IActionResult> GetManagerClasses(Guid id, ClassFilterModel filter, PaginationRequestModel pagination)
+        [HttpGet]
+        [Route("managers")]
+        [Authorize(UserRoles.Manager)]
+        [SwaggerOperation(Summary = "Get information about class list by manager role")]
+        public async Task<IActionResult> GetManagerClasses([FromQuery] ClassFilterModel filter, [FromQuery] PaginationRequestModel pagination)
         {
             try
             {
-                var query = _classRepository.GetMany(cl => cl.ManagerId.Equals(id));
-                if (filter.Name != null)
-                {
-                    query = query.Where(cl => cl.Name.Contains(filter.Name));
-                }
-                if (filter.ManagerId != null)
-                {
-                    query = query.Where(cl => cl.ManagerId.Equals(filter.ManagerId));
-                }
-                if (filter.Status != null)
-                {
-                    query = query.Where(cl => cl.Status.Equals(filter.Status));
-                }
-                var totalRow = _classRepository.Count();
-                var classes = await query.AsNoTracking()
-                    .ProjectTo<ClassViewModel>(_mapper.ConfigurationProvider)
-                    .OrderByDescending(cl => cl.CreateAt)
-                    .Paginate(pagination)
-                    .ToListAsync();
-                return new OkObjectResult(classes.ToPaged(pagination, totalRow));
+                var user = (AuthModel)HttpContext.Items["User"]!;
+                return await _classService.GetManagerClasses(user.Id, filter, pagination);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                throw;
-            }
-        }
-
-        private async Task<StudentClassViewModel> GetStudentInClass(Guid classId, Guid studentId)
-        {
-            try
-            {
-                var studentClass = await _studentClassRepository.GetMany(st => st.ClassId.Equals(classId) && st.StudentId.Equals(studentId))
-                    .ProjectTo<StudentClassViewModel>(_mapper.ConfigurationProvider)
-                    .FirstOrDefaultAsync();
-                return studentClass != null ? studentClass : null!;
-            }
-            catch (Exception)
-            {
-                throw;
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
 
