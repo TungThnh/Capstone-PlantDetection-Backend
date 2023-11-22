@@ -68,6 +68,52 @@ namespace Presentation.Controllers
             }
         }
 
+        public async Task<IActionResult> GetManagerClasses(Guid id, ClassFilterModel filter, PaginationRequestModel pagination)
+        {
+            try
+            {
+                var query = _classRepository.GetMany(cl => cl.ManagerId.Equals(id));
+                if (filter.Name != null)
+                {
+                    query = query.Where(cl => cl.Name.Contains(filter.Name));
+                }
+                if (filter.ManagerId != null)
+                {
+                    query = query.Where(cl => cl.ManagerId.Equals(filter.ManagerId));
+                }
+                if (filter.Status != null)
+                {
+                    query = query.Where(cl => cl.Status.Equals(filter.Status));
+                }
+                var totalRow = _classRepository.Count();
+                var classes = await query.AsNoTracking()
+                    .ProjectTo<ClassViewModel>(_mapper.ConfigurationProvider)
+                    .OrderByDescending(cl => cl.CreateAt)
+                    .Paginate(pagination)
+                    .ToListAsync();
+                return new OkObjectResult(classes.ToPaged(pagination, totalRow));
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        private async Task<StudentClassViewModel> GetStudentInClass(Guid classId, Guid studentId)
+        {
+            try
+            {
+                var studentClass = await _studentClassRepository.GetMany(st => st.ClassId.Equals(classId) && st.StudentId.Equals(studentId))
+                    .ProjectTo<StudentClassViewModel>(_mapper.ConfigurationProvider)
+                    .FirstOrDefaultAsync();
+                return studentClass != null ? studentClass : null!;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         [HttpGet]
         [Route("{id}/students")]
         [SwaggerOperation(Summary = "Get the list of Students of a Class by the Class ID")]
