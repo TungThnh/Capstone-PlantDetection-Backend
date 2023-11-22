@@ -10,10 +10,12 @@ namespace Application.Services.Interfaces
     {
         Task<IActionResult> GetClass(Guid id);
         Task<IActionResult> GetClasses(PaginationRequestModel pagination, ClassFilterModel filter);
+        Task<IActionResult> GetManagerClasses(Guid id, ClassFilterModel filter, PaginationRequestModel pagination);
         Task<IActionResult> GetStudentClass(Guid id);
         Task<IActionResult> FindClassByCode(string code);
         Task<IActionResult> CreateClass(ClassCreateModel model, Guid managerId);
         Task<IActionResult> UpdateClass(Guid id, ClassUpdateModel model);
+        Task<IActionResult> ApproveStudentToJoinClass(Guid classId, Guid studentId);
         Task<IActionResult> RequestToJoinClass(Guid studentId, Guid classId);
         Task<IActionResult> InviteStudentIntoClass(InviteStudentModel model);
         Task<IActionResult> ListOfStudents(Guid id, PaginationRequestModel pagination);
