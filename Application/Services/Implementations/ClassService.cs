@@ -5,7 +5,6 @@ using Common.Constants;
 using Common.Extensions;
 using Common.Helpers;
 using Data;
-using Data.Repositories.Implementations;
 using Data.Repositories.Interfaces;
 using Domain.Entities;
 using Domain.Models.Creates;
@@ -24,11 +23,14 @@ namespace Application.Services.Implementations
         private readonly new IMapper _mapper;
         private readonly IClassRepository _classRepository;
         private readonly IStudentClassRepository _studentClassRepository;
-        public ClassService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork, mapper)
+        private readonly ICloudStorageService _cloudStorageService;
+
+        public ClassService(IUnitOfWork unitOfWork, IMapper mapper, ICloudStorageService cloudStorageService) : base(unitOfWork, mapper)
         {
             _mapper = mapper;
             _classRepository = unitOfWork.Class;
             _studentClassRepository = unitOfWork.StudentClass;
+            _cloudStorageService = cloudStorageService;
         }
 
         public async Task<IActionResult> GetClass(Guid id)
@@ -50,6 +52,52 @@ namespace Application.Services.Implementations
                 {
                     StatusCode = StatusCodes.Status200OK
                 };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<IActionResult> GetManagerClasses(Guid id, ClassFilterModel filter, PaginationRequestModel pagination)
+        {
+            try
+            {
+                var query = _classRepository.GetMany(cl => cl.ManagerId.Equals(id));
+                if (filter.Name != null)
+                {
+                    query = query.Where(cl => cl.Name.Contains(filter.Name));
+                }
+                if (filter.ManagerId != null)
+                {
+                    query = query.Where(cl => cl.ManagerId.Equals(filter.ManagerId));
+                }
+                if (filter.Status != null)
+                {
+                    query = query.Where(cl => cl.Status.Equals(filter.Status));
+                }
+                var totalRow = _classRepository.Count();
+                var classes = await query.AsNoTracking()
+                    .ProjectTo<ClassViewModel>(_mapper.ConfigurationProvider)
+                    .OrderByDescending(cl => cl.CreateAt)
+                    .Paginate(pagination)
+                    .ToListAsync();
+                return new OkObjectResult(classes.ToPaged(pagination, totalRow));
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        private async Task<StudentClassViewModel> GetStudentInClass(Guid classId, Guid studentId)
+        {
+            try
+            {
+                var studentClass = await _studentClassRepository.GetMany(st => st.ClassId.Equals(classId) && st.StudentId.Equals(studentId))
+                    .ProjectTo<StudentClassViewModel>(_mapper.ConfigurationProvider)
+                    .FirstOrDefaultAsync();
+                return studentClass != null ? studentClass : null!;
             }
             catch (Exception)
             {
@@ -123,6 +171,9 @@ namespace Application.Services.Implementations
                 iClass.ManagerId = managerId;
                 iClass.Status = ClassStatuses.PendingApproval;
                 _classRepository.Add(iClass);
+                iClass.ThumbnailUrl = await _cloudStorageService
+                    .Upload(Guid.NewGuid(), model.Thumbnail.ContentType, model.Thumbnail.OpenReadStream());
+
                 var result = await _unitOfWork.SaveChangesAsync();
                 if (result > 0)
                 {
@@ -152,7 +203,7 @@ namespace Application.Services.Implementations
                     };
                 }
 
-                iClass = _mapper.Map(model, iClass);
+                _mapper.Map(model, iClass);
                 _classRepository.Update(iClass);
                 var result = await _unitOfWork.SaveChangesAsync();
                 if (result > 0)
@@ -256,7 +307,7 @@ namespace Application.Services.Implementations
                     StudentId = studentId
                 };
                 studentClass.CreateAt = DateTimeHelper.Now();
-                studentClass.Status = ClassQueueStatuses.PendingApproval;
+                studentClass.Status = ClassQueueStatuses.Enrolled;
                 _studentClassRepository.Add(studentClass);
                 var result = await _unitOfWork.SaveChangesAsync();
                 if (result > 0)
@@ -316,6 +367,46 @@ namespace Application.Services.Implementations
                 {
                     return await GetClass(model.ClassId);
                 }
+                return new ObjectResult(CustomErrors.UnprocessableEntity)
+                {
+                    StatusCode = StatusCodes.Status422UnprocessableEntity
+                };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<IActionResult> ApproveStudentToJoinClass(Guid classId, Guid studentId)
+        {
+            try
+            {
+                var studentClass = await _studentClassRepository.GetMany(st => st.ClassId.Equals(classId) && st.StudentId.Equals(studentId))
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
+                if(studentClass == null)
+                {
+                    return new ObjectResult(CustomErrors.RecordNotFound)
+                    {
+                        StatusCode = StatusCodes.Status404NotFound
+                    };
+                }
+
+                studentClass.Status = ClassQueueStatuses.Enrolled;
+
+                _studentClassRepository.Update(studentClass);
+
+                var result = await _unitOfWork.SaveChangesAsync();
+                if (result > 0)
+                {
+                    var response = await GetStudentInClass(classId, studentId);
+                    return new ObjectResult(response)
+                    {
+                        StatusCode = StatusCodes.Status200OK
+                    };
+                }
+
                 return new ObjectResult(CustomErrors.UnprocessableEntity)
                 {
                     StatusCode = StatusCodes.Status422UnprocessableEntity

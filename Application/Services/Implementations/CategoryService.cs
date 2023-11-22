@@ -2,9 +2,11 @@
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Common.Constants;
+using Common.Extensions;
 using Data;
 using Data.Repositories.Interfaces;
-using Domain.Entities;
+using Domain.Models.Filters;
+using Domain.Models.Pagination;
 using Domain.Models.Views;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +22,33 @@ namespace Application.Services.Implementations
         {
             _mapper = mapper;
             _categoryRepository = unitOfWork.Category;
+        }
+
+        public async Task<IActionResult> GetCategories(CategoryFilterModel filter, PaginationRequestModel pagination)
+        {
+            try
+            {
+                var query = _categoryRepository.GetAll();
+                if (filter.Name != null)
+                {
+                    query = query.Where(c => c.Name.Contains(filter.Name));
+                }
+
+                var totalRow = await query.AsNoTracking().CountAsync();
+                var categories = await query.AsNoTracking()
+                    .ProjectTo<CategoryViewModel>(_mapper.ConfigurationProvider)
+                    .Paginate(pagination)
+                .ToListAsync();
+
+                return new ObjectResult(categories.ToPaged(pagination, totalRow))
+                {
+                    StatusCode = StatusCodes.Status200OK
+                };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public async Task<IActionResult> GetCategory(Guid id)
