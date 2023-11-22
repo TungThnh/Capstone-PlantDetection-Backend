@@ -179,5 +179,21 @@ namespace Presentation.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
+
+        [HttpPut]
+        [Route("{classId}/approve-student/{studentId}")]
+        [Authorize(UserRoles.Manager)]
+        [SwaggerOperation(Summary = "Manager invite Student to join the Class")]
+        public async Task<IActionResult> ApproveStudentToJoinClass([FromRoute] Guid classId, [FromRoute] Guid studentId)
+        {
+            try
+            {
+                return await _classService.ApproveStudentToJoinClass(classId, studentId);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
     }
 }
