@@ -9,9 +9,9 @@ public partial class Report
 
     public Guid StudentId { get; set; }
 
-    public string ImageUrl { get; set; } = null!;
+    public Guid LabelId { get; set; }
 
-    public string Label { get; set; } = null!;
+    public string ImageUrl { get; set; } = null!;
 
     public string? Description { get; set; }
 
@@ -19,7 +19,9 @@ public partial class Report
 
     public DateTime CreateAt { get; set; }
 
-    public virtual Result? Result { get; set; }
+    public string? Note { get; set; }
+
+    public virtual Label Label { get; set; } = null!;
 
     public virtual Student Student { get; set; } = null!;
 }
