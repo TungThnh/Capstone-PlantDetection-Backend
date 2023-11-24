@@ -119,7 +119,7 @@ namespace Presentation.Controllers
         [HttpPost]
         [Authorize(UserRoles.Manager)]
         [SwaggerOperation(Summary = "Create a new class by Manager")]
-        public async Task<IActionResult> CreateClass([FromBody] ClassCreateModel model)
+        public async Task<IActionResult> CreateClass([FromForm] ClassCreateModel model)
         {
             try
             {
