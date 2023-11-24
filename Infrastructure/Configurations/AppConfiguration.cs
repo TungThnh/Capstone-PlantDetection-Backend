@@ -21,6 +21,9 @@ namespace Infrastructure.Configurations
             services.AddScoped<IPredictionService, PredictionService>();
             services.AddScoped<ICloudStorageService, CloudStorageService>();
             services.AddScoped<IPlantService, PlantService>();
+            services.AddScoped<IReportService, ReportService>();
+            services.AddScoped<IManagerService, ManagerService>();
+            services.AddScoped<ILabelService, LabelService>();
 
             services.AddTransient<IUnitOfWork, UnitOfWork>();
         }
