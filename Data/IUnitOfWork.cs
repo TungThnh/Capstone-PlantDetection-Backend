@@ -13,6 +13,9 @@ namespace Data
         public IPlantCategoryRepository PlantCategory { get; }
         public IPlantRepository Plant { get; }
         public IImageRepository Image { get; }
+        public IReportRepository Report { get; }
+        public ILabelRepository Label { get; }
+        public IClassLabelRepository ClassLabel { get; }
 
         void BeginTransaction();
         void Commit();

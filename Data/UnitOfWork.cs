@@ -18,6 +18,9 @@ namespace Data
         public IPlantCategoryRepository _plantCategory = null!;
         public IPlantRepository _plant = null!;
         public IImageRepository _image = null!;
+        public IReportRepository _report = null!;
+        public ILabelRepository _label = null!;
+        public IClassLabelRepository _classLabel = null!;
 
         public UnitOfWork(PlantDetectionContext context)
         {
@@ -61,6 +64,21 @@ namespace Data
         public IImageRepository Image
         {
             get { return _image ??= new ImageRepository(_context); }
+        }      
+        
+        public IReportRepository Report
+        {
+            get { return _report ??= new ReportRepository(_context); }
+        }   
+        
+        public ILabelRepository Label
+        {
+            get { return _label ??= new LabelRepository(_context); }
+        }      
+        
+        public IClassLabelRepository ClassLabel
+        {
+            get { return _classLabel ??= new ClassLabelRepository(_context); }
         }
 
         public void BeginTransaction()
