@@ -3,10 +3,8 @@ using Domain.Entities;
 using Domain.Models.Creates;
 using Domain.Models.Firebase;
 using Domain.Models.Systems;
-using Domain.Models.Views;
-using Common.Constants;
 using Domain.Models.Updates;
-using Domain.Specifications;
+using Domain.Models.Views;
 
 namespace Data.Mappings
 {
@@ -14,6 +12,11 @@ namespace Data.Mappings
     {
         public MappingProfile()
         {
+            // Data type
+            CreateMap<int?, int>().ConvertUsing((src, dest) => src ?? dest);
+            CreateMap<Guid?, Guid>().ConvertUsing((src, dest) => src ?? dest);
+            CreateMap<DateTime?, DateTime>().ConvertUsing((src, dest) => src ?? dest);
+
             // Student
             CreateMap<Student, AuthModel>();
 
@@ -60,6 +63,9 @@ namespace Data.Mappings
                  .ForMember(dest => dest.Phone, opt => opt.Ignore())
                  .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => src.Claims.Picture));
 
+            CreateMap<ManagerUpdateModel, Manager>()
+                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
             // Class
             CreateMap<Class, ClassViewModel>();
 
@@ -69,7 +75,8 @@ namespace Data.Mappings
             CreateMap<ClassCreateModel, Class>();
 
             // Student Class
-            CreateMap<StudentClass, StudentClassViewModel>();
+            CreateMap<StudentClass, StudentClassViewModel>()
+                 .ForMember(dest => dest.Reports, opt => opt.MapFrom(src => src.Student.Reports.Count));
 
             CreateMap<StudentClassViewModel, StudentClass>();
 
@@ -88,6 +95,15 @@ namespace Data.Mappings
             CreateMap<Plant, PlantViewModel>();
             CreateMap<PlantCreateModel, Plant>()
                                .ForMember(dest => dest.Images, opt => opt.Ignore());
+
+            // Report
+            CreateMap<Report, ReportViewModel>();
+            CreateMap<ReportCreateModel, Report>();
+            CreateMap<ReportUpdateModel, Report>();
+
+            // Label
+            CreateMap<Label, LabelViewModel>();
+            CreateMap<LabelCreateModel, Label>();
         }
     }
 }
