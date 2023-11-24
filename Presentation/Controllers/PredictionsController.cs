@@ -19,7 +19,6 @@ namespace Presentation.Controllers
         {
             try
             {
-                var a = image;
                 return await _predictionService.ProgressImage(image);
             }
             catch (Exception ex)
@@ -27,6 +26,7 @@ namespace Presentation.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex);
             }
         }
+
         [HttpPut]
         [Route("model/update/class/{id}")]
         public IActionResult UpdateClassModel([FromRoute] Guid id, [FromForm] ClassModelCreateModel model)
