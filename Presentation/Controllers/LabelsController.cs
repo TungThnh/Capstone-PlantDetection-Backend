@@ -3,6 +3,7 @@ using Application.Services.Interfaces;
 using Domain.Models.Creates;
 using Domain.Models.Filters;
 using Domain.Models.Pagination;
+using Domain.Models.Updates;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -54,6 +55,34 @@ namespace Presentation.Controllers
             try
             {
                 return await _labelService.CreateLabel(model);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpPut]
+        [Route("{id}")]
+        public async Task<IActionResult> UpdateLabel([FromRoute] Guid id, [FromBody] LabelUpdateModel model)
+        {
+            try
+            {
+                return await _labelService.UpdateLabel(id, model);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> DeleteLabel([FromRoute] Guid id)
+        {
+            try
+            {
+                return await _labelService.RemoveLabel(id);
             }
             catch (Exception ex)
             {

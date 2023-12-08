@@ -10,6 +10,8 @@
 
         public string? Description { get; set; } = null!;
 
+        public int Reports { get; set; }
+
         public virtual StudentViewModel Student { get; set; } = null!;
     }
 }

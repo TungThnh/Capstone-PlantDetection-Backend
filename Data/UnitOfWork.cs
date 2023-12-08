@@ -21,6 +21,9 @@ namespace Data
         public IReportRepository _report = null!;
         public ILabelRepository _label = null!;
         public IClassLabelRepository _classLabel = null!;
+        public IQuestionRepository _question = null!;
+        public IExamRepository _exam = null!;
+        public IQuestionExamRepository _questionExam = null!;
 
         public UnitOfWork(PlantDetectionContext context)
         {
@@ -79,6 +82,21 @@ namespace Data
         public IClassLabelRepository ClassLabel
         {
             get { return _classLabel ??= new ClassLabelRepository(_context); }
+        }    
+        
+        public IQuestionRepository Question
+        {
+            get { return _question ??= new QuestionRepository(_context); }
+        }   
+        
+        public IExamRepository Exam
+        {
+            get { return _exam ??= new ExamRepository(_context); }
+        }    
+        
+        public IQuestionExamRepository QuestionExam
+        {
+            get { return _questionExam ??= new QuestionExamRepository(_context); }
         }
 
         public void BeginTransaction()

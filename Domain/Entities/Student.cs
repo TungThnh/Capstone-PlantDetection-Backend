@@ -1,4 +1,7 @@
-﻿namespace Domain.Entities;
+﻿using System;
+using System.Collections.Generic;
+
+namespace Domain.Entities;
 
 public partial class Student
 {
@@ -10,7 +13,7 @@ public partial class Student
 
     public string Email { get; set; } = null!;
 
-    public string? AvatarUrl { get; set; } 
+    public string? AvatarUrl { get; set; }
 
     public string? College { get; set; }
 
@@ -21,6 +24,8 @@ public partial class Student
     public string? DayOfBirth { get; set; }
 
     public string Status { get; set; } = null!;
+
+    public virtual ICollection<Exam> Exams { get; set; } = new List<Exam>();
 
     public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
 

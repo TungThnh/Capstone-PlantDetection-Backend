@@ -54,6 +54,38 @@ namespace Presentation.Controllers
             }
         }
 
+        [HttpDelete]
+        [Route("{id}/leave")]
+        [Authorize(UserRoles.Student)]
+        [SwaggerOperation(Summary = "Leave class for student")]
+        public async Task<IActionResult> LeaveClass([FromRoute] Guid id)
+        {
+            try
+            {
+                var user = (AuthModel)HttpContext.Items["User"]!;
+                return await _classService.LeaveClass(id, user.Id);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("available")]
+        [SwaggerOperation(Summary = "Get information about available class list by filter condition")]
+        public async Task<IActionResult> GetAvailableClasses([FromQuery] PaginationRequestModel pagination, [FromQuery] ClassFilterModel model)
+        {
+            try
+            {
+                return await _classService.GetAvailableClasses(pagination, model);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
         [HttpGet]
         [SwaggerOperation(Summary = "Get information about Class list by filter condition")]
         public async Task<IActionResult> GetClasses([FromQuery] PaginationRequestModel pagination, [FromQuery] ClassFilterModel model)
@@ -61,6 +93,21 @@ namespace Presentation.Controllers
             try
             {
                 return await _classService.GetClasses(pagination, model);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("{id}/is-model-exists")]
+        [SwaggerOperation(Summary = "Get information about Class list by filter condition")]
+        public async Task<IActionResult> IsClassModelExists([FromRoute] Guid id)
+        {
+            try
+            {
+                return await _classService.IsClassModelExists(id);
             }
             catch (Exception ex)
             {

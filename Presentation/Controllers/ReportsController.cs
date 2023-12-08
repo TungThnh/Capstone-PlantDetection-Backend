@@ -1,4 +1,4 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using Common.Constants;
 using Domain.Models.Creates;
 using Domain.Models.Filters;
@@ -30,6 +30,23 @@ namespace Presentation.Controllers
             try
             {
                 return await _reportService.GetReport(id);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpGet]
+        [Route("students")]
+        [Authorize(UserRoles.Student)]
+        [SwaggerOperation(Summary = "Get information about report list of student by filter condition")]
+        public async Task<IActionResult> GetStudentReports([FromQuery] PaginationRequestModel pagination, [FromQuery] ReportFilterModel filter)
+        {
+            try
+            {
+                var user = (AuthModel)HttpContext.Items["User"]!;
+                return await _reportService.GetStudentReports(user.Id, pagination, filter);
             }
             catch (Exception ex)
             {

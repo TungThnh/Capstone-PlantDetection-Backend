@@ -63,7 +63,7 @@ namespace Application.Services.Implementations
         {
             try
             {
-                var query = _classRepository.GetMany(cl => cl.ManagerId.Equals(id));
+                var query = _classRepository.GetMany(cl => cl.ManagerId.Equals(id) && !cl.Status.Equals(ClassStatuses.PendingApproval));
                 if (filter.Name != null)
                 {
                     query = query.Where(cl => cl.Name.Contains(filter.Name));
@@ -76,7 +76,7 @@ namespace Application.Services.Implementations
                 {
                     query = query.Where(cl => cl.Status.Equals(filter.Status));
                 }
-                var totalRow = _classRepository.Count();
+                var totalRow = query.Count();
                 var classes = await query.AsNoTracking()
                     .ProjectTo<ClassViewModel>(_mapper.ConfigurationProvider)
                     .OrderByDescending(cl => cl.CreateAt)
@@ -131,6 +131,37 @@ namespace Application.Services.Implementations
             }
         }
 
+        public async Task<IActionResult> GetAvailableClasses(PaginationRequestModel pagination, ClassFilterModel filter)
+        {
+            try
+            {
+                var query = _classRepository.GetMany(cl => !cl.Status.Equals(ClassStatuses.PendingApproval));
+                if (filter.Name != null)
+                {
+                    query = query.Where(cl => cl.Name.Contains(filter.Name));
+                }
+                if (filter.ManagerId != null)
+                {
+                    query = query.Where(cl => cl.ManagerId.Equals(filter.ManagerId));
+                }
+                if (filter.Status != null)
+                {
+                    query = query.Where(cl => cl.Status.Equals(filter.Status));
+                }
+                var totalRow = await query.AsNoTracking().CountAsync();
+                var classes = await query.AsNoTracking()
+                    .ProjectTo<ClassViewModel>(_mapper.ConfigurationProvider)
+                    .OrderByDescending(cl => cl.CreateAt)
+                    .Paginate(pagination)
+                    .ToListAsync();
+                return new OkObjectResult(classes.ToPaged(pagination, totalRow));
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         public async Task<IActionResult> GetClasses(PaginationRequestModel pagination, ClassFilterModel filter)
         {
             try
@@ -166,6 +197,22 @@ namespace Application.Services.Implementations
         {
             try
             {
+                if(_classRepository.Any(cl => cl.Code.Equals(model.Code)))
+                {
+                    return new ObjectResult(CustomErrors.ClassCodeConflict)
+                    {
+                        StatusCode = StatusCodes.Status409Conflict
+                    };
+                }
+
+                if (_classRepository.Any(cl => cl.Name.Equals(model.Name)))
+                {
+                    return new ObjectResult(CustomErrors.ClassNameConflict)
+                    {
+                        StatusCode = StatusCodes.Status409Conflict
+                    };
+                }
+
                 var iClass = _mapper.Map<Class>(model);
                 iClass.Id = Guid.NewGuid();
                 iClass.ManagerId = managerId;
@@ -269,10 +316,63 @@ namespace Application.Services.Implementations
             }
         }
 
+        private bool CheckFolderExists(string directoryPath, string folderName)
+        {
+            string folderPath = Path.Combine(directoryPath, folderName);
+
+            return Directory.Exists(folderPath);
+        }
+
+        private bool CheckModelFileExists(string folderPath)
+        {
+            string modelFilePath = Path.Combine(folderPath, "best.pt");
+
+            return File.Exists(modelFilePath);
+        }
+
+        public async Task<IActionResult> IsClassModelExists(Guid id)
+        {
+            try
+            {
+                var classCode = await _classRepository.GetMany(cl => cl.Id.Equals(id)).Select(cl => cl.Code).FirstOrDefaultAsync();
+
+                if (classCode == null)
+                {
+                    return new NotFoundResult();
+                }
+
+                string classDirectory = @"C:\Users\Janglee\Desktop\plant_classfify\classes\";
+
+                return new ObjectResult(CheckFolderExists(classDirectory, classCode) && CheckModelFileExists(classDirectory + classCode))
+                {
+                    StatusCode = StatusCodes.Status200OK
+                };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         public async Task<IActionResult> RequestToJoinClass(Guid studentId, Guid classId)
         {
             try
             {
+                var iClass = await _classRepository.GetMany(cl => cl.Id.Equals(classId)).FirstOrDefaultAsync();
+
+                if(iClass == null)
+                {
+                    return new NotFoundResult();
+                }
+
+                if(iClass.Status.Equals(ClassStatuses.Closed))
+                {
+                    return new ObjectResult(CustomErrors.ClassClosed)
+                    {
+                        StatusCode = StatusCodes.Status423Locked
+                    };
+                }
+
                 // Return 409 if the student is already in the class
                 if (_studentClassRepository.Any(sc => sc.ClassId.Equals(classId) && sc.StudentId.Equals(studentId)))
                 {
@@ -313,6 +413,34 @@ namespace Application.Services.Implementations
                 if (result > 0)
                 {
                     return await GetClass(classId);
+                }
+                return new ObjectResult(CustomErrors.UnprocessableEntity)
+                {
+                    StatusCode = StatusCodes.Status422UnprocessableEntity
+                };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<IActionResult> LeaveClass(Guid classId, Guid studentId)
+        {
+            try
+            {
+                var studentClass = await _studentClassRepository
+                    .GetMany(st => st.ClassId.Equals(classId) && st.StudentId.Equals(studentId)).FirstOrDefaultAsync();
+
+                if (studentClass != null)
+                {
+                    _studentClassRepository.Remove(studentClass);
+                }
+
+                var result = await _unitOfWork.SaveChangesAsync();
+                if (result > 0)
+                {
+                    return new NoContentResult();
                 }
                 return new ObjectResult(CustomErrors.UnprocessableEntity)
                 {
@@ -385,7 +513,7 @@ namespace Application.Services.Implementations
                 var studentClass = await _studentClassRepository.GetMany(st => st.ClassId.Equals(classId) && st.StudentId.Equals(studentId))
                     .AsNoTracking()
                     .FirstOrDefaultAsync();
-                if(studentClass == null)
+                if (studentClass == null)
                 {
                     return new ObjectResult(CustomErrors.RecordNotFound)
                     {

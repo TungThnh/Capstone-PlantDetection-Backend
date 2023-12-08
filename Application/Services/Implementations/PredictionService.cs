@@ -54,7 +54,14 @@ namespace Application.Services.Implementations
 
                 StringBuilder terminalOutput = new StringBuilder();
 
-                process.OutputDataReceived += (sender, e) => Console.WriteLine("Service: " + e.Data);
+                process.OutputDataReceived += (sender, e) =>
+                {
+                    Console.WriteLine("Service: " + e.Data);
+                    if (!string.IsNullOrEmpty(e.Data))
+                    {
+                        terminalOutput.AppendLine(e.Data);
+                    }
+                };
 
                 process.ErrorDataReceived += (sender, e) =>
                 {
@@ -72,6 +79,8 @@ namespace Application.Services.Implementations
                 await process.WaitForExitAsync();
 
                 process.Close();
+
+                var aaaa = terminalOutput.ToString();
 
                 return terminalOutput.ToString();
             }
@@ -168,7 +177,7 @@ namespace Application.Services.Implementations
                 }
 
                 string workingDirectory = @"C:\Users\Janglee\Desktop\plant_classfify";
-                string classDirectory = workingDirectory + "\\" + classCode;
+                string classDirectory = workingDirectory + "/classes/" + classCode;
                 var imageUrl = await GetImageUrl(imageId, image);
                 string command = "py";
                 string arguments = "main.py " + imageUrl + " " + classDirectory;
@@ -227,17 +236,21 @@ namespace Application.Services.Implementations
                 List<EstimateViewModel> estimates = new List<EstimateViewModel>();
                 foreach (var result in results)
                 {
-                    var plant = await _plantRepository.GetMany(pl => pl.Code.Equals(result.Label))
-                        .ProjectTo<PlantViewModel>(_mapper.ConfigurationProvider)
-                        .FirstOrDefaultAsync();
-                    if (plant != null)
+                    if (result.Confidence > 0)
                     {
-                        var estimate = new EstimateViewModel
+
+                        var plant = await _plantRepository.GetMany(pl => pl.Code.Equals(result.Label))
+                            .ProjectTo<PlantViewModel>(_mapper.ConfigurationProvider)
+                            .FirstOrDefaultAsync();
+                        if (plant != null)
                         {
-                            Plant = plant,
-                            Confidence = result.Confidence,
-                        };
-                        estimates.Add(estimate);
+                            var estimate = new EstimateViewModel
+                            {
+                                Plant = plant,
+                                Confidence = result.Confidence,
+                            };
+                            estimates.Add(estimate);
+                        }
                     }
                 }
                 return estimates;
@@ -270,7 +283,7 @@ namespace Application.Services.Implementations
                     Directory.CreateDirectory(folderPath);
                 }
 
-                string filePath = Path.Combine(folderPath, file.FileName);
+                string filePath = Path.Combine(folderPath, "best.pt");
 
                 // Ghi file vào đường dẫn đã tạo
                 using (var stream = new FileStream(filePath, FileMode.Create))

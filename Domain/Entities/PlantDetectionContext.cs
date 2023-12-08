@@ -21,6 +21,8 @@ public partial class PlantDetectionContext : DbContext
 
     public virtual DbSet<ClassLabel> ClassLabels { get; set; }
 
+    public virtual DbSet<Exam> Exams { get; set; }
+
     public virtual DbSet<Image> Images { get; set; }
 
     public virtual DbSet<Label> Labels { get; set; }
@@ -30,6 +32,10 @@ public partial class PlantDetectionContext : DbContext
     public virtual DbSet<Plant> Plants { get; set; }
 
     public virtual DbSet<PlantCategory> PlantCategories { get; set; }
+
+    public virtual DbSet<Question> Questions { get; set; }
+
+    public virtual DbSet<QuestionExam> QuestionExams { get; set; }
 
     public virtual DbSet<Report> Reports { get; set; }
 
@@ -43,7 +49,7 @@ public partial class PlantDetectionContext : DbContext
     {
         modelBuilder.Entity<Category>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Category__3214EC07599C830C");
+            entity.HasKey(e => e.Id).HasName("PK__Category__3214EC07B3913FDD");
 
             entity.ToTable("Category");
 
@@ -74,24 +80,41 @@ public partial class PlantDetectionContext : DbContext
 
         modelBuilder.Entity<ClassLabel>(entity =>
         {
-            entity.HasKey(e => new { e.ClassId, e.LabelId }).HasName("PK__ClassLab__E88EC57C5291F1FD");
+            entity.HasKey(e => new { e.ClassId, e.LabelId }).HasName("PK__ClassLab__E88EC57C61469D3A");
 
             entity.ToTable("ClassLabel");
 
             entity.HasOne(d => d.Class).WithMany(p => p.ClassLabels)
                 .HasForeignKey(d => d.ClassId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ClassLabe__Class__09A971A2");
+                .HasConstraintName("FK__ClassLabe__Class__693CA210");
 
             entity.HasOne(d => d.Label).WithMany(p => p.ClassLabels)
                 .HasForeignKey(d => d.LabelId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ClassLabe__Label__0A9D95DB");
+                .HasConstraintName("FK__ClassLabe__Label__6A30C649");
+        });
+
+        modelBuilder.Entity<Exam>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Exam__3214EC07F67D7956");
+
+            entity.ToTable("Exam");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreateAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+
+            entity.HasOne(d => d.Student).WithMany(p => p.Exams)
+                .HasForeignKey(d => d.StudentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Exam__StudentId__04E4BC85");
         });
 
         modelBuilder.Entity<Image>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Image__3214EC0711A92C27");
+            entity.HasKey(e => e.Id).HasName("PK__Image__3214EC074D995419");
 
             entity.ToTable("Image");
 
@@ -103,12 +126,12 @@ public partial class PlantDetectionContext : DbContext
             entity.HasOne(d => d.Plant).WithMany(p => p.Images)
                 .HasForeignKey(d => d.PlantId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Image__PlantId__534D60F1");
+                .HasConstraintName("FK__Image__PlantId__6B24EA82");
         });
 
         modelBuilder.Entity<Label>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Label__3214EC072BBF52F4");
+            entity.HasKey(e => e.Id).HasName("PK__Label__3214EC07EC55B55E");
 
             entity.ToTable("Label");
 
@@ -118,11 +141,11 @@ public partial class PlantDetectionContext : DbContext
 
         modelBuilder.Entity<Manager>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Manager__3214EC070C9D818A");
+            entity.HasKey(e => e.Id).HasName("PK__Manager__3214EC0743DFD152");
 
             entity.ToTable("Manager");
 
-            entity.HasIndex(e => e.Email, "UQ__Manager__A9D105348744DEF2").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Manager__A9D1053417DF5BC0").IsUnique();
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.DayOfBirth).HasMaxLength(256);
@@ -135,7 +158,7 @@ public partial class PlantDetectionContext : DbContext
 
         modelBuilder.Entity<Plant>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Plant__3214EC07F47C24AB");
+            entity.HasKey(e => e.Id).HasName("PK__Plant__3214EC0780A7ED13");
 
             entity.ToTable("Plant");
 
@@ -163,19 +186,49 @@ public partial class PlantDetectionContext : DbContext
 
         modelBuilder.Entity<PlantCategory>(entity =>
         {
-            entity.HasKey(e => new { e.CategoryId, e.PlantId }).HasName("PK__PlantCat__C086D99E7614EA19");
+            entity.HasKey(e => new { e.CategoryId, e.PlantId }).HasName("PK__PlantCat__C086D99E4BA6DA59");
 
             entity.ToTable("PlantCategory");
 
             entity.HasOne(d => d.Category).WithMany(p => p.PlantCategories)
                 .HasForeignKey(d => d.CategoryId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__PlantCate__Categ__5441852A");
+                .HasConstraintName("FK__PlantCate__Categ__6C190EBB");
 
             entity.HasOne(d => d.Plant).WithMany(p => p.PlantCategories)
                 .HasForeignKey(d => d.PlantId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__PlantCate__Plant__5535A963");
+                .HasConstraintName("FK__PlantCate__Plant__6D0D32F4");
+        });
+
+        modelBuilder.Entity<Question>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Question__3214EC0700C45194");
+
+            entity.ToTable("Question");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CorrectAnswer)
+                .HasMaxLength(1)
+                .IsUnicode(false)
+                .IsFixedLength();
+        });
+
+        modelBuilder.Entity<QuestionExam>(entity =>
+        {
+            entity.HasKey(e => new { e.QuestionId, e.ExamId }).HasName("PK__Question__6F573DB0D0DF4485");
+
+            entity.ToTable("QuestionExam");
+
+            entity.HasOne(d => d.Exam).WithMany(p => p.QuestionExams)
+                .HasForeignKey(d => d.ExamId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__QuestionE__ExamI__09A971A2");
+
+            entity.HasOne(d => d.Question).WithMany(p => p.QuestionExams)
+                .HasForeignKey(d => d.QuestionId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__QuestionE__Quest__08B54D69");
         });
 
         modelBuilder.Entity<Report>(entity =>
@@ -203,11 +256,11 @@ public partial class PlantDetectionContext : DbContext
 
         modelBuilder.Entity<Result>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Result__3214EC07C8A5624F");
+            entity.HasKey(e => e.Id).HasName("PK__Result__3214EC07FCD17FD1");
 
             entity.ToTable("Result");
 
-            entity.HasIndex(e => e.ReportId, "UQ__Result__D5BD4804D385B818").IsUnique();
+            entity.HasIndex(e => e.ReportId, "UQ__Result__D5BD48046B86B560").IsUnique();
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreateAt)
@@ -216,16 +269,16 @@ public partial class PlantDetectionContext : DbContext
 
             entity.HasOne(d => d.Plant).WithMany(p => p.Results)
                 .HasForeignKey(d => d.PlantId)
-                .HasConstraintName("FK__Result__PlantId__571DF1D5");
+                .HasConstraintName("FK__Result__PlantId__6FE99F9F");
         });
 
         modelBuilder.Entity<Student>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Student__3214EC07E80A0F9F");
+            entity.HasKey(e => e.Id).HasName("PK__Student__3214EC079B6EBA29");
 
             entity.ToTable("Student");
 
-            entity.HasIndex(e => e.Email, "UQ__Student__A9D105346518DB64").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Student__A9D1053439DE6B8C").IsUnique();
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.College).HasMaxLength(256);
@@ -239,11 +292,11 @@ public partial class PlantDetectionContext : DbContext
 
         modelBuilder.Entity<StudentClass>(entity =>
         {
-            entity.HasKey(e => new { e.ClassId, e.StudentId }).HasName("PK__StudentC__48357579D47C23B5");
+            entity.HasKey(e => new { e.ClassId, e.StudentId }).HasName("PK__StudentC__48357579EE19572F");
 
             entity.ToTable("StudentClass");
 
-            entity.HasIndex(e => e.StudentId, "UQ__StudentC__32C52B98311219CA").IsUnique();
+            entity.HasIndex(e => e.StudentId, "UQ__StudentC__32C52B98D4EA130E").IsUnique();
 
             entity.Property(e => e.CreateAt)
                 .HasDefaultValueSql("(getdate())")
@@ -259,7 +312,7 @@ public partial class PlantDetectionContext : DbContext
             entity.HasOne(d => d.Student).WithOne(p => p.StudentClass)
                 .HasForeignKey<StudentClass>(d => d.StudentId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__StudentCl__Stude__59FA5E80");
+                .HasConstraintName("FK__StudentCl__Stude__71D1E811");
         });
 
         OnModelCreatingPartial(modelBuilder);

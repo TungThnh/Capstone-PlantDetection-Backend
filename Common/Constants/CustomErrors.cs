@@ -17,5 +17,25 @@
         public const string RequestSubmitted = "You have submitted your request and are waiting for confirmation";
 
         public const string RequestHasNotBeenConfirmed = "This student's request to participate has not been confirmed";
+
+        public const string InvalidFileType = "The file is not in the correct format";
+
+        public const string ClassClosed = "The class has been closed";
+
+        public const string ClassCodeConflict = "The class code already exists";
+
+        public const string ClassNameConflict = "The class name already exists";
+
+        public const string UnsubmittedExam = "The exam has not been submitted yet";
+
+        public const string ExamSubmitted = "The exam has been submitted";
+
+        public const string LabelNameAlreadyExists = "The label name already exists";
+
+        public const string LabelAlreadyInClass = "The label already in class";
+
+        public const string PlantCodeConflict = "The plant code already exists";
+
+        public const string PlantNameConflict = "The plant name already exists";
     }
 }

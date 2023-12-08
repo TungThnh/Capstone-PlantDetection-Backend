@@ -1,4 +1,4 @@
-namespace Common.Constants
+﻿namespace Common.Constants
 {
     public class ReportStatuses
     {

@@ -68,18 +68,18 @@ namespace Data.Mappings
 
             // Class
             CreateMap<Class, ClassViewModel>();
-
             CreateMap<ClassUpdateModel, Class>()
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember, context) => srcMember != null));
-
             CreateMap<ClassCreateModel, Class>();
+
+            //Class Labels
+            CreateMap<ClassLabel, ClassLabelViewModel>();
+            CreateMap<ClassLabelCreateModel, ClassLabel>();
 
             // Student Class
             CreateMap<StudentClass, StudentClassViewModel>()
                  .ForMember(dest => dest.Reports, opt => opt.MapFrom(src => src.Student.Reports.Count));
-
             CreateMap<StudentClassViewModel, StudentClass>();
-
             CreateMap<InviteStudentModel, StudentClass>();
 
             // Image
@@ -90,6 +90,7 @@ namespace Data.Mappings
 
             // Plant Category
             CreateMap<PlantCategory, PlantCategoryViewModel>();
+            CreateMap<PlantCategoryCreateModel, PlantCategory>();
 
             // Plant
             CreateMap<Plant, PlantViewModel>();
@@ -97,13 +98,36 @@ namespace Data.Mappings
                                .ForMember(dest => dest.Images, opt => opt.Ignore());
 
             // Report
-            CreateMap<Report, ReportViewModel>();
+            CreateMap<Report, ReportViewModel>()
+                               .ForMember(dest => dest.Class, opt => opt.MapFrom(src => src.Student.StudentClass!.Class));
+
             CreateMap<ReportCreateModel, Report>();
             CreateMap<ReportUpdateModel, Report>();
 
             // Label
             CreateMap<Label, LabelViewModel>();
             CreateMap<LabelCreateModel, Label>();
+            CreateMap<LabelUpdateModel, Label>()
+                                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
+
+            // Question
+            CreateMap<Question, QuestionViewModel>();
+            CreateMap<QuestionCreateModel, Question>();
+
+            // Exam
+            CreateMap<Exam, ExamViewModel>();
+
+            // Question Exam
+            CreateMap<QuestionExam, QuestionExamViewModel>();
+
+            // Result
+            CreateMap<Question, QuestionResultViewModel>();
+            CreateMap<Exam, ExamResultViewModel>();
+            CreateMap<QuestionExam, QuestionExamResultViewModel>();
+
+            // Submit
+            CreateMap<ExamSubmitCreateModel, Exam>();
+            CreateMap<QuestionExamSubmitCreateModel, QuestionExam>();
         }
     }
 }

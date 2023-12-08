@@ -1,4 +1,4 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Common.Constants;
@@ -71,7 +71,9 @@ namespace Application.Services.Implementations
         {
             try
             {
-                var query = _reportRepository.GetMany(rp => rp.Student.StudentClass!.Class.ManagerId.Equals(managerId));
+                var query = _reportRepository.GetMany(rp => rp.Student.StudentClass!.Class.ManagerId.Equals(managerId)
+                    && !rp.Student.StudentClass.Class.Status.Equals(ClassStatuses.PendingApproval)
+                );
 
                 if (filter.Name != null)
                 {
@@ -105,6 +107,53 @@ namespace Application.Services.Implementations
             }
         }
 
+        public async Task<IActionResult> GetStudentReports(Guid id, PaginationRequestModel pagination, ReportFilterModel filter)
+        {
+            try
+            {
+                var query = _reportRepository.GetMany(rp => rp.Student.Id.Equals(id));
+                if (filter.Name != null)
+                {
+                    query = query.Where(pl => pl.Label.Name.Contains(filter.Name));
+                }
+                if (filter.Status != null)
+                {
+                    query = query.Where(pl => pl.Status.Equals(filter.Status));
+                }
+                if (filter.LabelId != null)
+                {
+                    query = query.Where(pl => pl.LabelId.Equals(filter.LabelId));
+                }
+                if (filter.ClassId != null)
+                {
+                    query = query.Where(pl => pl.Student.StudentClass != null ? pl.Student.StudentClass.ClassId.Equals(filter.ClassId) : false);
+                }
+                if (filter.Latest != null && filter.Latest == true)
+                {
+                    query = query.OrderByDescending(pl => pl.CreateAt).ThenBy(pl => pl.Status);
+                }
+                if (filter.Latest != null && filter.Latest == false)
+                {
+                    query = query.OrderBy(pl => pl.CreateAt).ThenBy(pl => pl.Status);
+                }
+
+                var totalRow = await query.AsNoTracking().CountAsync();
+                var reports = await query.AsNoTracking()
+                    .ProjectTo<ReportViewModel>(_mapper.ConfigurationProvider)
+                    .Paginate(pagination)
+                    .ToListAsync();
+
+                return new ObjectResult(reports.ToPaged(pagination, totalRow))
+                {
+                    StatusCode = StatusCodes.Status200OK
+                };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         public async Task<IActionResult> GetReports(PaginationRequestModel pagination, ReportFilterModel filter)
         {
             try
@@ -117,6 +166,10 @@ namespace Application.Services.Implementations
                 if (filter.Status != null)
                 {
                     query = query.Where(pl => pl.Status.Equals(filter.Status));
+                }
+                if (filter.LabelId != null)
+                {
+                    query = query.Where(pl => pl.LabelId.Equals(filter.LabelId));
                 }
                 if (filter.ClassId != null)
                 {

@@ -1,4 +1,4 @@
-using Application.Services.Interfaces;
+﻿using Application.Services.Interfaces;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Common.Constants;
@@ -9,6 +9,7 @@ using Domain.Entities;
 using Domain.Models.Creates;
 using Domain.Models.Filters;
 using Domain.Models.Pagination;
+using Domain.Models.Updates;
 using Domain.Models.Views;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -51,6 +52,11 @@ namespace Application.Services.Implementations
                 if (filter.Name != null)
                 {
                     query = query.Where(c => c.Name.Contains(filter.Name));
+                }
+
+                if (filter.ClassId != null)
+                {
+                    query = query.Where(c => c.ClassLabels.Any(lb => lb.ClassId.Equals(filter.ClassId)));
                 }
 
                 var totalRow = await query.AsNoTracking().CountAsync();
@@ -100,6 +106,13 @@ namespace Application.Services.Implementations
         {
             try
             {
+                if (_labelRepository.Any(lb => lb.Name.Equals(model.Name)))
+                {
+                    return new ObjectResult(CustomErrors.LabelNameAlreadyExists)
+                    {
+                        StatusCode = StatusCodes.Status409Conflict
+                    };
+                }
 
                 var id = Guid.NewGuid();
                 var label = _mapper.Map<Label>(model);
@@ -121,6 +134,82 @@ namespace Application.Services.Implementations
                 {
                     StatusCode = StatusCodes.Status422UnprocessableEntity
                 };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<IActionResult> UpdateLabel(Guid id, LabelUpdateModel model)
+        {
+            try
+            {
+                if (_labelRepository.Any(lb => lb.Name.Equals(model.Name)))
+                {
+                    return new ObjectResult(CustomErrors.LabelNameAlreadyExists)
+                    {
+                        StatusCode = StatusCodes.Status409Conflict
+                    };
+                }
+                var label = await _labelRepository.GetMany(lb => lb.Id.Equals(id)).FirstOrDefaultAsync();
+
+                if (label == null)
+                {
+                    return new ObjectResult(CustomErrors.RecordNotFound)
+                    {
+                        StatusCode = StatusCodes.Status404NotFound
+                    };
+                }
+
+                _mapper.Map(model, label);
+
+                _labelRepository.Update(label);
+
+                var result = await _unitOfWork.SaveChangesAsync();
+
+                if (result > 0)
+                {
+                    return await GetLabel(id);
+                }
+                return new ObjectResult(CustomErrors.UnprocessableEntity)
+                {
+                    StatusCode = StatusCodes.Status422UnprocessableEntity
+                };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<IActionResult> RemoveLabel(Guid id)
+        {
+            try
+            {
+                var label = await _labelRepository.GetMany(lb => lb.Id.Equals(id))
+                    .Include(lb => lb.ClassLabels)
+                    .FirstOrDefaultAsync();
+
+                if (label == null)
+                {
+                    return new ObjectResult(CustomErrors.RecordNotFound)
+                    {
+                        StatusCode = StatusCodes.Status404NotFound
+                    };
+                }
+
+                if (label.ClassLabels.Any())
+                {
+                    return new ObjectResult(CustomErrors.LabelAlreadyInClass)
+                    {
+                        StatusCode = StatusCodes.Status400BadRequest
+                    };
+                }
+
+                _labelRepository.Remove(label);
+                var result = await _unitOfWork.SaveChangesAsync();
+                return new NoContentResult();
             }
             catch (Exception)
             {

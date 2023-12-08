@@ -1,11 +1,11 @@
-using Data.Repositories.Interfaces;
+﻿using Data.Repositories.Interfaces;
 using Domain.Entities;
 
 namespace Data.Repositories.Implementations
 {
-    public class ClassLabelRepository : Repository<ClassLabel>, IClassLabelRepository
+    public class LabelRepository : Repository<Label>, ILabelRepository
     {
-        public ClassLabelRepository(PlantDetectionContext context) : base(context)
+        public LabelRepository(PlantDetectionContext context) : base(context)
         {
         }
     }

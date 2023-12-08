@@ -16,6 +16,4 @@ public partial class Result
     public DateTime CreateAt { get; set; }
 
     public virtual Plant? Plant { get; set; }
-
-    public virtual Report Report { get; set; } = null!;
 }

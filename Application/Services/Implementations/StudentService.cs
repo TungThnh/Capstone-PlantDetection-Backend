@@ -86,9 +86,9 @@ namespace Application.Services.Implementations
                     };
                 }
 
-                var studentUpdate = _mapper.Map(model, student);
+                _mapper.Map(model, student);
 
-                _studentRepository.Update(studentUpdate);
+                _studentRepository.Update(student);
                 var result = await _unitOfWork.SaveChangesAsync();
                 if (result > 0)
                 {

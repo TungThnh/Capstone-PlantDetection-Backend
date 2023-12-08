@@ -1,4 +1,4 @@
-using Data.Repositories.Interfaces;
+﻿using Data.Repositories.Interfaces;
 using Domain.Entities;
 
 namespace Data.Repositories.Implementations

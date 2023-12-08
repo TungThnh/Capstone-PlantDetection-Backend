@@ -1,5 +1,4 @@
 ﻿using Data.Repositories.Interfaces;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Data
 {
@@ -16,6 +15,9 @@ namespace Data
         public IReportRepository Report { get; }
         public ILabelRepository Label { get; }
         public IClassLabelRepository ClassLabel { get; }
+        public IQuestionRepository Question { get; }
+        public IExamRepository Exam { get; }
+        public IQuestionExamRepository QuestionExam { get; }
 
         void BeginTransaction();
         void Commit();

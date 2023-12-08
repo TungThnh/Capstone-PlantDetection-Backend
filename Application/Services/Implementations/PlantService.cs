@@ -70,7 +70,7 @@ namespace Application.Services.Implementations
                 }
                 if (filter.Code != null)
                 {
-                    query = query.Where(pl => pl.Name.Contains(filter.Code));
+                    query = query.Where(pl => pl.Code.Equals(filter.Code));
                 }
                 if (filter.Status != null)
                 {
@@ -102,44 +102,46 @@ namespace Application.Services.Implementations
         {
             try
             {
+                if (_plantRepository.Any(pl => pl.Code.Equals(model.Code)))
+                {
+                    return new ObjectResult(CustomErrors.PlantCodeConflict)
+                    {
+                        StatusCode = StatusCodes.Status409Conflict
+                    };
+                }
+
+                if (_plantRepository.Any(pl => pl.Name.Equals(model.Name)))
+                {
+                    return new ObjectResult(CustomErrors.PlantNameConflict)
+                    {
+                        StatusCode = StatusCodes.Status409Conflict
+                    };
+                }
+
                 var id = Guid.NewGuid();
                 var plant = _mapper.Map<Plant>(model);
                 plant.Id = id;
-                plant.Status = "Availabel";
+                plant.Status = "Available";
                 _unitOfWork.BeginTransaction();
                 try
                 {
-
                     _plantRepository.Add(plant);
                     var plantSaved = await _unitOfWork.SaveChangesAsync();
                     if (plantSaved > 0)
                     {
-                        foreach (var plantCategoryId in model.CategoryIds)
+                        foreach (var image in model.Images)
                         {
-                            var plantCategory = new PlantCategory
+                            var imageId = Guid.NewGuid();
+                            var url = await _cloudStorageService.Upload(imageId, image.ContentType, image.OpenReadStream());
+                            var plantImage = new Image
                             {
-                                CategoryId = plantCategoryId,
-                                PlantId = id
+                                Id = imageId,
+                                PlantId = id,
+                                Url = url
                             };
-                            _plantCategoryRepository.Add(plantCategory);
+                            _imageRepository.Add(plantImage);
                         }
-                        var categoriesSaved = await _unitOfWork.SaveChangesAsync();
-                        if (categoriesSaved > 0)
-                        {
-                            foreach (var image in model.Images)
-                            {
-                                var imageId = Guid.NewGuid();
-                                var url = await _cloudStorageService.Upload(imageId, image.ContentType, image.OpenReadStream());
-                                var plantImage = new Image
-                                {
-                                    Id = imageId,
-                                    PlantId = id,
-                                    Url = url
-                                };
-                                _imageRepository.Add(plantImage);
-                            }
-                            await _unitOfWork.SaveChangesAsync();
-                        }
+                        await _unitOfWork.SaveChangesAsync();
                         _unitOfWork.Commit();
                         return await GetPlant(id);
                     }

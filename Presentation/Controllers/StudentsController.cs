@@ -4,7 +4,6 @@ using Domain.Models.Filters;
 using Domain.Models.Pagination;
 using Domain.Models.Systems;
 using Domain.Models.Updates;
-using Domain.Specifications;
 using Infrastructure.Configurations;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -24,7 +23,7 @@ namespace Presentation.Controllers
 
         [HttpGet]
         [Route("{id}")]
-        [SwaggerOperation(Summary = "Get information about a Student by Student ID")]
+        [SwaggerOperation(Summary = "Get information about a Student by student Id")]
         public async Task<IActionResult> GetStudent([FromRoute] Guid id)
         {
             try
