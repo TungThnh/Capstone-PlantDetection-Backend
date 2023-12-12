@@ -1,4 +1,7 @@
-﻿namespace Domain.Entities;
+﻿using System;
+using System.Collections.Generic;
+
+namespace Domain.Entities;
 
 public partial class Exam
 {
@@ -8,9 +11,9 @@ public partial class Exam
 
     public DateTime CreateAt { get; set; }
 
-    public DateTime? SubmitAt { get; set; }
-
     public bool IsSubmitted { get; set; }
+
+    public DateTime? SubmitAt { get; set; }
 
     public double? Score { get; set; }
 

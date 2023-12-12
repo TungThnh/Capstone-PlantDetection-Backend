@@ -1,5 +1,6 @@
 ﻿using Application.Services.Interfaces;
 using Common.Constants;
+using Domain.Entities;
 using Domain.Models.Filters;
 using Domain.Models.Pagination;
 using Domain.Models.Systems;
@@ -19,6 +20,28 @@ namespace Presentation.Controllers
         public StudentsController(IStudentService studentService)
         {
             _studentService = studentService;
+        }
+
+        [HttpGet]
+        [Route("exports/classes/{id}")]
+        [SwaggerOperation(Summary = "Export students to excel")]
+        public async Task<IActionResult> ExportStudents([FromRoute] Guid id)
+        {
+            try
+            {
+                await _studentService.ExportStudents(id);
+
+                string fileName = $"{id}.xlsx";
+                string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                string savedFolderPath = Path.Combine(desktopPath + "/Students", fileName);
+
+                byte[] fileBytes = System.IO.File.ReadAllBytes(savedFolderPath);
+                return File(fileBytes, "application/octet-stream", fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
         }
 
         [HttpGet]

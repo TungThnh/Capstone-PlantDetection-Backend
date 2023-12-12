@@ -1,7 +1,9 @@
-﻿using Common.Constants;
+﻿using Application.Services.Interfaces;
+using Common.Constants;
 using Infrastructure.Configurations;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
+using System;
 using System.Drawing;
 
 namespace Presentation.Controllers
@@ -11,6 +13,12 @@ namespace Presentation.Controllers
     [ApiController]
     public class ConnectionsController : ControllerBase
     {
+        private readonly ICloudStorageService _cloudStorageService;
+        public ConnectionsController(ICloudStorageService cloudStorageService)
+        {
+            _cloudStorageService = cloudStorageService;
+        }
+
         [HttpGet]
         [Route("app")]
         [SwaggerOperation(Summary = "Check if the app is working")]
@@ -48,25 +56,18 @@ namespace Presentation.Controllers
 
         [HttpPost]
         [Route("images")]
-        public IActionResult TestUploadImage(IFormFile file)
+        public async Task<IActionResult> TestUploadImage(IFormFile file)
         {
             try
             {
                 if (file != null)
                 {
-                    using (var image = Image.FromStream(file.OpenReadStream()))
-                    {
-                        int width = image.Width;
-                        int height = image.Height;
-                        if (width > 1920 && height > 1080)
-                        {
-                            return StatusCode(StatusCodes.Status200OK);
-                        }
-                        return StatusCode(StatusCodes.Status412PreconditionFailed);
-                    }
+                    var url = await _cloudStorageService.Upload(Guid.NewGuid(), file.ContentType, file);
+                    return Ok(url);
                 }
                 return BadRequest();
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }

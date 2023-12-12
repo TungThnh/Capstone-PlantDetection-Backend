@@ -132,7 +132,7 @@ namespace Application.Services.Implementations
                         foreach (var image in model.Images)
                         {
                             var imageId = Guid.NewGuid();
-                            var url = await _cloudStorageService.Upload(imageId, image.ContentType, image.OpenReadStream());
+                            var url = await _cloudStorageService.Upload(imageId, image.ContentType, image);
                             var plantImage = new Image
                             {
                                 Id = imageId,

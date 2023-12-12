@@ -90,7 +90,7 @@ namespace Application.Services.Implementations
         {
             try
             {
-                return await _cloudStorageService.Upload(id, image.ContentType, image.OpenReadStream());
+                return await _cloudStorageService.Upload(id, image.ContentType, image);
             }
             catch (Exception)
             {

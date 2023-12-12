@@ -2,7 +2,9 @@
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Common.Constants;
+using System.IO;
 using Common.Extensions;
+using Common.Helpers;
 using Data;
 using Data.Repositories.Interfaces;
 using Domain.Models.Filters;
@@ -11,7 +13,10 @@ using Domain.Models.Updates;
 using Domain.Models.Views;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using System.Data;
 
 namespace Application.Services.Implementations
 {
@@ -19,10 +24,52 @@ namespace Application.Services.Implementations
     {
         private readonly new IMapper _mapper;
         private readonly IStudentRepository _studentRepository;
-        public StudentService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork, mapper)
+        private readonly string _connectionString;
+
+        public StudentService(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration configuration) : base(unitOfWork, mapper)
         {
             _mapper = mapper;
             _studentRepository = unitOfWork.Student;
+            _connectionString = configuration.GetConnectionString("DefaultConnection") ?? null!;
+        }
+
+        public async Task<DataTable> GetStudentsDataTableAsync(Guid classId)
+        {
+            using (SqlConnection connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+
+                var query = _studentRepository.GetMany(st => st.StudentClass != null ? st.StudentClass.ClassId.Equals(classId) : false).ToQueryString();
+
+                using (SqlCommand command = new SqlCommand(query, connection))
+                {
+                    using (SqlDataAdapter dataAdapter = new SqlDataAdapter(command))
+                    {
+                        DataTable dataTable = new DataTable();
+                        await Task.Run(() => dataAdapter.Fill(dataTable));
+                        return dataTable;
+                    }
+                }
+            }
+        }
+
+        public async Task ExportStudents(Guid classId)
+        {
+            try
+            {
+                var students = await GetStudentsDataTableAsync(classId);
+                string fileName = $"{classId}.xlsx";
+
+                // Tạo đường dẫn đến thư mục Students trên Desktop
+                string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                string savedFolderPath = Path.Combine(desktopPath + "/Students", fileName);
+
+                ExcelHelper.ExportToExcel(students, "Students", savedFolderPath);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
 
         public async Task<IActionResult> GetStudent(Guid id)

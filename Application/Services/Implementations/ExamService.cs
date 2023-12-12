@@ -10,6 +10,7 @@ using Domain.Models.Creates;
 using Domain.Models.Filters;
 using Domain.Models.Pagination;
 using Domain.Models.Views;
+using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +38,31 @@ namespace Application.Services.Implementations
                     .ProjectTo<ExamViewModel>(_mapper.ConfigurationProvider)
                     .FirstOrDefaultAsync();
                 return exam != null ? exam : null!;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<IActionResult> GetExamResult(Guid id)
+        {
+            try
+            {
+                var exam = await _examRepository.GetMany(ex => ex.Id.Equals(id))
+                    .ProjectTo<ExamResultViewModel>(_mapper.ConfigurationProvider)
+                    .FirstOrDefaultAsync();
+                if (exam == null)
+                {
+                    return new ObjectResult(CustomErrors.RecordNotFound)
+                    {
+                        StatusCode = StatusCodes.Status404NotFound
+                    };
+                }
+                return new ObjectResult(exam)
+                {
+                    StatusCode = StatusCodes.Status200OK
+                };
             }
             catch (Exception)
             {
@@ -100,6 +126,39 @@ namespace Application.Services.Implementations
             }
         }
 
+        public async Task AutoSubmitExam(Guid id)
+        {
+            try
+            {
+                var exam = await _examRepository.GetMany(ex => ex.Id.Equals(id))
+                    .Include(ex => ex.QuestionExams)
+                    .ThenInclude(qe => qe.Question)
+                    .FirstOrDefaultAsync();
+
+                if (exam == null)
+                {
+                    return;
+                }
+
+                if (exam.IsSubmitted)
+                {
+                    return;
+                }
+
+                exam.SubmitAt = DateTime.Now.AddHours(7);
+                exam.IsSubmitted = true;
+
+                exam.Score = 0.0;
+
+                _examRepository.Update(exam);
+                var result = await _unitOfWork.SaveChangesAsync();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         public async Task<IActionResult> CreateExam(Guid studentId)
         {
             try
@@ -125,6 +184,7 @@ namespace Application.Services.Implementations
                 var result = await _unitOfWork.SaveChangesAsync();
                 if (result > 0)
                 {
+                    BackgroundJob.Schedule(() => AutoSubmitExam(exam.Id), TimeSpan.FromMinutes(11));
                     var response = await GetExamById(exam.Id);
                     return new ObjectResult(response)
                     {
@@ -167,19 +227,19 @@ namespace Application.Services.Implementations
                     };
                 }
 
-                _mapper.Map(model, exam);
                 exam.SubmitAt = DateTime.Now.AddHours(7);
                 exam.IsSubmitted = true;
-
-                exam.Score = 0.0;
-
-                foreach (var question in exam.QuestionExams)
+                foreach (var questionExam in model.QuestionExams)
                 {
-                    if (question.SelectedAnswer != null && question.SelectedAnswer.Equals(question.Question.CorrectAnswer))
+                    foreach (var crQuestionExam in exam.QuestionExams)
                     {
-                        exam.Score += CalculateScore(exam.QuestionExams.Count());
+                        if (questionExam.QuestionId.Equals(crQuestionExam.QuestionId))
+                        {
+                            crQuestionExam.SelectedAnswer = questionExam.SelectedAnswer;
+                        }
                     }
                 }
+                exam.Score = CalculateExamScore(exam);
 
                 _examRepository.Update(exam);
                 var result = await _unitOfWork.SaveChangesAsync();
@@ -239,6 +299,27 @@ namespace Application.Services.Implementations
                     StatusCode = StatusCodes.Status200OK
                 };
 
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        private double CalculateExamScore(Exam exam)
+        {
+            try
+            {
+                var score = 0.0;
+
+                foreach (var question in exam.QuestionExams)
+                {
+                    if (question.SelectedAnswer != null && question.SelectedAnswer.Equals(question.Question.CorrectAnswer))
+                    {
+                        score += CalculateScore(exam.QuestionExams.Count());
+                    }
+                }
+                return Math.Round(score, 1);
             }
             catch (Exception)
             {

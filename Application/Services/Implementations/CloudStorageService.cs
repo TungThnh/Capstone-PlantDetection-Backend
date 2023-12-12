@@ -3,6 +3,7 @@ using Application.Settings;
 using Common.Helpers;
 using Google;
 using Google.Cloud.Storage.V1;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System.Web;
 
@@ -23,18 +24,20 @@ public class CloudStorageService : ICloudStorageService
         _settings = settings.Value;
     }
 
-    public async Task<string> Upload(Guid id, string contentType, Stream stream)
+    public async Task<string> Upload(Guid id, string contentType, IFormFile file)
     {
         try
         {
+            var fileName = id + Path.GetExtension(file.FileName);
+
             await Storage.UploadObjectAsync(
                 _settings.Bucket,
-                $"{_settings.Folder}/{id}",
+                $"{_settings.Folder}/{fileName}",
                 contentType,
-                stream,
+                file.OpenReadStream(),
                 null,
                 CancellationToken.None);
-            var url = "https://firebasestorage.googleapis.com/v0/b/plant-detection-7a03e.appspot.com/o/images%2F" + id + "?alt=media";
+            var url = "https://firebasestorage.googleapis.com/v0/b/plant-detection-7a03e.appspot.com/o/images%2F" + fileName + "?alt=media";
             return url;
             //return CloudStorageHelper.GenerateV4UploadSignedUrl(
             //    _settings.Bucket,

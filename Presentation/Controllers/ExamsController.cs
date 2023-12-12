@@ -37,6 +37,21 @@ namespace Presentation.Controllers
         }
 
         [HttpGet]
+        [Route("{id}/results")]
+        [SwaggerOperation(Summary = "Get information about a exam result by exam Id")]
+        public async Task<IActionResult> GetExamResult([FromRoute] Guid id)
+        {
+            try
+            {
+                return await _examService.GetExamResult(id);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
+        [HttpGet]
         [Route("students")]
         [Authorize(UserRoles.Student)]
         [SwaggerOperation(Summary = "Get student exams history")]

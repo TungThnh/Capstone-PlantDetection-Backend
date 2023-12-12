@@ -98,9 +98,7 @@ namespace Data.Mappings
                                .ForMember(dest => dest.Images, opt => opt.Ignore());
 
             // Report
-            CreateMap<Report, ReportViewModel>()
-                               .ForMember(dest => dest.Class, opt => opt.MapFrom(src => src.Student.StudentClass!.Class));
-
+            CreateMap<Report, ReportViewModel>();
             CreateMap<ReportCreateModel, Report>();
             CreateMap<ReportUpdateModel, Report>();
 
@@ -127,7 +125,6 @@ namespace Data.Mappings
 
             // Submit
             CreateMap<ExamSubmitCreateModel, Exam>();
-            CreateMap<QuestionExamSubmitCreateModel, QuestionExam>();
         }
     }
 }

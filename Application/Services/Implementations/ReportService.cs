@@ -1,9 +1,11 @@
 ﻿using Application.Services.Interfaces;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Azure;
 using Common.Constants;
 using Common.Extensions;
 using Data;
+using Data.Repositories.Implementations;
 using Data.Repositories.Interfaces;
 using Domain.Entities;
 using Domain.Models.Creates;
@@ -21,12 +23,14 @@ namespace Application.Services.Implementations
     {
         private readonly new IMapper _mapper;
         private readonly IReportRepository _reportRepository;
+        private readonly IClassRepository _classRepository;
         private readonly ICloudStorageService _cloudStorageService;
 
         public ReportService(IUnitOfWork unitOfWork, IMapper mapper, ICloudStorageService cloudStorageService) : base(unitOfWork, mapper)
         {
             _mapper = mapper;
             _reportRepository = unitOfWork.Report;
+            _classRepository = unitOfWork.Class;
             _cloudStorageService = cloudStorageService;
         }
 
@@ -199,12 +203,25 @@ namespace Application.Services.Implementations
         {
             try
             {
+                var classId = await _classRepository.GetMany(cl => cl.StudentClasses.Any(st => st.StudentId.Equals(studentId)))
+                    .Select(cl => cl.Id)
+                    .FirstOrDefaultAsync();
+
+                if (classId.Equals(Guid.Empty))
+                {
+                    return new ObjectResult(CustomErrors.RecordNotFound)
+                    {
+                        StatusCode = StatusCodes.Status404NotFound
+                    };
+                }
+
                 var id = Guid.NewGuid();
                 var report = _mapper.Map<Report>(model);
                 report.Id = id;
+                report.ClassId = classId;
                 report.Status = ReportStatuses.Pending;
                 report.StudentId = studentId;
-                report.ImageUrl = await _cloudStorageService.Upload(Guid.NewGuid(), model.Image.ContentType, model.Image.OpenReadStream());
+                report.ImageUrl = await _cloudStorageService.Upload(Guid.NewGuid(), model.Image.ContentType, model.Image);
 
                 _reportRepository.Add(report);
 

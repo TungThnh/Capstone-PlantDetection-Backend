@@ -216,10 +216,10 @@ namespace Application.Services.Implementations
                 var iClass = _mapper.Map<Class>(model);
                 iClass.Id = Guid.NewGuid();
                 iClass.ManagerId = managerId;
-                iClass.Status = ClassStatuses.PendingApproval;
+                iClass.Status = ClassStatuses.Closed;
                 _classRepository.Add(iClass);
                 iClass.ThumbnailUrl = await _cloudStorageService
-                    .Upload(Guid.NewGuid(), model.Thumbnail.ContentType, model.Thumbnail.OpenReadStream());
+                    .Upload(Guid.NewGuid(), model.Thumbnail.ContentType, model.Thumbnail);
 
                 var result = await _unitOfWork.SaveChangesAsync();
                 if (result > 0)

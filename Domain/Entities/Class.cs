@@ -29,5 +29,7 @@ public partial class Class
 
     public virtual Manager Manager { get; set; } = null!;
 
+    public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
+
     public virtual ICollection<StudentClass> StudentClasses { get; set; } = new List<StudentClass>();
 }

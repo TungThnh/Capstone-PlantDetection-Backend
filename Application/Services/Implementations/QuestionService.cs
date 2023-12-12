@@ -129,7 +129,7 @@ namespace Application.Services.Implementations
                 question.Id = id;
                 if (model.Image != null)
                 {
-                    question.ImageUrl = await _cloudStorageService.Upload(Guid.NewGuid(), model.Image.ContentType, model.Image.OpenReadStream());
+                    question.ImageUrl = await _cloudStorageService.Upload(Guid.NewGuid(), model.Image.ContentType, model.Image);
                 }
 
                 _questionRepository.Add(question);
