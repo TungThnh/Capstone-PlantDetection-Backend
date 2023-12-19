@@ -26,6 +26,7 @@ namespace Infrastructure.Configurations
             services.AddScoped<ILabelService, LabelService>();
             services.AddScoped<IQuestionService, QuestionService>();
             services.AddScoped<IExamService, ExamService>();
+            services.AddScoped<IDashboardService, DashboardService>();
 
             services.AddTransient<IUnitOfWork, UnitOfWork>();
         }

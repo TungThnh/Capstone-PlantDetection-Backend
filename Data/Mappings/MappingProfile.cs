@@ -91,6 +91,8 @@ namespace Data.Mappings
             // Plant Category
             CreateMap<PlantCategory, PlantCategoryViewModel>();
             CreateMap<PlantCategoryCreateModel, PlantCategory>();
+            CreateMap<PlantUpdateModel, Plant>()
+                                .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
             // Plant
             CreateMap<Plant, PlantViewModel>();

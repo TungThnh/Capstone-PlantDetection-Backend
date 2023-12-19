@@ -21,13 +21,11 @@ namespace Application.Services.Implementations
     {
         private readonly IExamRepository _examRepository;
         private readonly IQuestionRepository _questionRepository;
-        private readonly IQuestionExamRepository _questionExamRepository;
         public ExamService(IUnitOfWork unitOfWork, IMapper mapper) : base(unitOfWork, mapper)
         {
             _mapper = mapper;
             _examRepository = unitOfWork.Exam;
             _questionRepository = unitOfWork.Question;
-            _questionExamRepository = unitOfWork.QuestionExam;
         }
 
         private async Task<ExamViewModel> GetExamById(Guid id)

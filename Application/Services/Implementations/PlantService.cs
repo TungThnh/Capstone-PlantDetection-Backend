@@ -4,11 +4,13 @@ using AutoMapper.QueryableExtensions;
 using Common.Constants;
 using Common.Extensions;
 using Data;
+using Data.Repositories.Implementations;
 using Data.Repositories.Interfaces;
 using Domain.Entities;
 using Domain.Models.Creates;
 using Domain.Models.Filters;
 using Domain.Models.Pagination;
+using Domain.Models.Updates;
 using Domain.Models.Views;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -149,6 +151,38 @@ namespace Application.Services.Implementations
                 catch (Exception)
                 {
                     _unitOfWork.Rollback();
+                }
+                return new ObjectResult(CustomErrors.UnprocessableEntity)
+                {
+                    StatusCode = StatusCodes.Status422UnprocessableEntity
+                };
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<IActionResult> UpdatePlant(Guid id, PlantUpdateModel model)
+        {
+            try
+            {
+                var plant = await _plantRepository.FirstOrDefaultAsync(st => st.Id.Equals(id));
+                if (plant == null)
+                {
+                    return new ObjectResult(CustomErrors.RecordNotFound)
+                    {
+                        StatusCode = StatusCodes.Status404NotFound
+                    };
+                }
+
+                var plantUpdate = _mapper.Map(model, plant);
+
+                _plantRepository.Update(plantUpdate);
+                var result = await _unitOfWork.SaveChangesAsync();
+                if (result > 0)
+                {
+                    return await GetPlant(id);
                 }
                 return new ObjectResult(CustomErrors.UnprocessableEntity)
                 {
